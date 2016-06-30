@@ -1,0 +1,284 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+</head>
+<body>
+<h1 id="chip-seq-analysis-and-visualization-using-galaxy">ChIP-seq analysis and visualization using Galaxy</h1>
+<h2 id="getting-started">0. Getting started</h2>
+<p>Log in or register on the Fred Hutch Galaxy server at <a href="http://galaxy.fredhutch.org" class="uri">http://galaxy.fredhutch.org</a>. Please use your <code>fredhutch.org</code> email address when you register.</p>
+<p>If your current history isn't empty, create a new one by clicking the gear icon at the top of the history pane to open the <em>History options</em> menu and selecting <em>Create New</em>.</p>
+<div class="figure">
+<img src="images/00-new-history.png" />
+
+</div>
+<p>Next, click on the history name, which defaults to &quot;Unnamed history&quot;, and give it a more memorable name. (You'll have to hit the return key to save it; you can't just click away.)</p>
+<h2 id="importing-data-from-a-data-library">1. Importing data from a data library</h2>
+<p>The data we'll be using is from a <em>Drosophila melanogaster</em> ChIP-seq experiment described in <a href="http://science.sciencemag.org/content/337/6095/742">Conrad et al. (2012)</a> (ENA accession: PRJEB3031). The authors explain that acetylation of histone H4K16 was thought to mediate an increase in X-linked transcription in <em>Drosophila</em> males relative to females, but the mechanism was unclear. The purpose of the experiment was to investigate this mechanism, in part by comparing RNA polymerase II (Pol II) occupancies between male and female flies as well as between the X chromosome and autosomes.</p>
+<p>The sequences are 75 bp single-end reads from the input and Pol II ChIP samples obtained from female flies. Each set of sequences has been reduced to 200,000 reads that map to chr2L and chrX. The reads are in FASTQ format, which includes both the sequences and the per-base quality scores.</p>
+<p>It's very important to note here that Galaxy uses two FASTQ formats: &quot;fastq&quot; and &quot;fastqsanger&quot;. These formats are related to the quality score format used in the FASTQ file. The &quot;fastq&quot; format makes no guarantee as to the quality score format used in the file (there are at least three). Most Galaxy tools can't infer the format of quality scores, and thus will not accept &quot;fastq&quot; datasets as valid input. Instead, tools usually expect &quot;fastqsanger&quot; inputs, in which the quality scores are guaranteed to be in Sanger/Illumina 1.8+ format.</p>
+<p>Our data is already in &quot;fastqsanger&quot; format, so we don't need to do anything before we proceed. However, if you're ever dealing with data in &quot;fastq&quot; format, there's information on converting it to &quot;fastqsanger&quot; <a href="https://wiki.galaxyproject.org/Support#FASTQ_Datatype_QA">on the Galaxy wiki</a>. There's also a very helpful <a href="http://vimeo.com/galaxyproject/fastqprep">screencast</a> covering this issue as well as other basic FASTQ preparation steps.</p>
+<p>Now we'll import the reads sequenced for this experiment from a shared data library into our history. In the menu bar, navigate to <em>Shared Data &gt; Data Libraries</em> and select the <strong>ChIP-seq tutorial data</strong> library.</p>
+<div class="figure">
+<img src="images/01-data-libraries.png" />
+
+</div>
+<p>Tick the checkboxes next to the input and Pol II samples from female flies in the library to select them. Make sure <strong>Import to current history</strong> is selected in the dropdown box at the bottom and then click <em>Go</em>.</p>
+<div class="figure">
+<img src="images/02-data-libraries-import.png" />
+
+</div>
+<p>Return to the main Galaxy view by clicking <em>Analyze Data</em> in the menu bar.</p>
+<h2 id="fetching-gene-annotations-from-ucsc">2. Fetching gene annotations from UCSC</h2>
+<p>Next we'll fetch gene annotations for chromosomes 2L and X using the UCSC Table Browser. This tool allows access to the same data available for visualization in the UCSC Genome Browser.</p>
+<h3 id="a.-fetching-the-chr2l-annotation">2a. Fetching the chr2L annotation</h3>
+<p>In the tool pane on the left-hand side, select <em>Get Data &gt; UCSC Main</em>. To download the annotation for chr2L, use the following settings:</p>
+<ul>
+<li>clade: <strong>Insect</strong></li>
+<li>genome: <strong>D. melanogaster</strong></li>
+<li>assembly: <strong>Apr. 2006 (BDGP R5/dm3)</strong></li>
+<li>group: <strong>Genes and Gene Predictions</strong></li>
+<li>track: <strong>RefSeq Genes</strong></li>
+<li>region: (select <strong>position</strong>) <strong>chr2L</strong></li>
+<li>output format: <strong>BED - browser extensible data</strong></li>
+</ul>
+<p>It should look like the following:</p>
+<div class="figure">
+<img src="images/03-ucsc-chr2L.png" />
+
+</div>
+<p>Once you're satisfied the settings are correct, click the <em>Get output</em> button near the bottom of the page.</p>
+<p>The next page shows the options available for the records that will be returned in the BED file. For example, if you were interested in the regions upstream of every RefSeq gene on chr2L, you would select the <strong>Upstream by ___ bases</strong> radio button and enter the length of the region you wanted. In this case, though, we're interested in whole genes, so make sure <strong>Whole Gene</strong> is selected and then click <em>Send query to Galaxy</em> at the bottom of the page.</p>
+<div class="figure">
+<img src="images/04-ucsc-bed-options.png" />
+
+</div>
+<p>After a moment you'll be returned to the main Galaxy view and a new queued BED dataset will appear in your history.</p>
+<h3 id="b.-fetching-the-chrx-annotation">2b. Fetching the chrX annotation</h3>
+<p>Again, in the tool pane on the left-hand side, select <em>Get Data &gt; UCSC Main</em>. The tool will remember the last settings you used, so you'll only need to change the position setting to <strong>chrX</strong> and click <em>Get output</em> then <em>Send query to Galaxy</em> again.</p>
+<p>It's worth mentioning at this point that in most cases jobs can be configured and submitted even if the jobs they depend on are still queued or running — so you can continue on even if you're still waiting for the BED files to download.</p>
+<h3 id="c.-combining-the-chr2l-and-chrx-annotations">2c. Combining the chr2L and chrX annotations</h3>
+<p>In a later step, we'll need the chr2L and chrX annotations combined into a single file. BED files are plain-text tabular data with one row per feature, so to combine the chr2L and chrX annotations, we just need to concatenate them. In the tool pane, select <em>Text Manipulation &gt; Concatenate datasets</em>. (You can also start typing &quot;concatenate&quot; into the search bar at the top of the tool pane to find the right tool.)</p>
+<p>In the drop-down list, select the chr2L genes dataset you downloaded from UCSC Main. Click the <em>Insert Dataset</em> button to add a second drop-down list, then select the chrX genes dataset.</p>
+<div class="figure">
+<img src="images/05-concatenate.png" />
+
+</div>
+<p>Finally, click the <em>Execute</em> button to submit the job.</p>
+<p>The dataset name Galaxy assigns to the output of this job isn't very helpful, so we'll rename it before we continue. Wait for the job to complete, then click the pencil icon next to the dataset name.</p>
+<div class="figure">
+<img src="images/05-rename.png" />
+
+</div>
+<p>This will open the attributes pane. In the &quot;Name&quot; text field at the top, type in a more memorable name, like <strong>refGene (chr2L, chrX)</strong>, then click <em>Save</em> at the bottom of the page.</p>
+<h2 id="mapping-reads-with-bowtie2">3. Mapping reads with Bowtie2</h2>
+<p><a href="http://bowtie-bio.sourceforge.net/bowtie2/index.shtml">Bowtie2</a> is a fast and efficient tool for aligning short reads to long reference sequences.</p>
+<h3 id="a.-mapping-input-sample-reads">3a. Mapping input sample reads</h3>
+<p>In the tool pane, select <em>NGS: Mapping &gt; Bowtie2</em>. Use the following settings:</p>
+<ul>
+<li>Is this library mate-paired? <strong>Single-end</strong></li>
+<li>FASTQ file: <strong>Input sample FASTQ file</strong></li>
+<li>Select a reference genome: <strong>Fruit Fly (Drosophila melanogaster): dm3</strong></li>
+</ul>
+<div class="figure">
+<img src="images/06-bowtie2-input.png" />
+
+</div>
+<p>Then click <em>Execute</em> to submit the job. This job will generate a sequence alignment (in BAM format) of the mapped input sample reads.</p>
+<h3 id="b.-mapping-pol-ii-sample-reads">3b. Mapping Pol II sample reads</h3>
+<p>Follow the same steps as above, except for the following setting:</p>
+<ul>
+<li>FASTQ file: <strong>Pol II sample FASTQ file</strong></li>
+</ul>
+<h3 id="c.-renaming-bowtie2-output-datasets">3c. Renaming Bowtie2 output datasets</h3>
+<p>The names Galaxy gives the output datasets won't be very helpful later when we need to distinguish between the input and Pol II alignments. As before, wait until the jobs complete, then click the pencil icon next to each Bowtie2 output dataset and give them more helpful names, like <strong>Bowtie2 on Input_wt_femaleA1: aligned reads</strong> and <strong>Bowtie2 on PolII_wt_femaleA1: aligned reads</strong>.</p>
+<h2 id="examining-bowtie2s-alignment-summary">4. Examining Bowtie2's alignment summary</h2>
+<p>When you click on the name of a dataset in the history pane, it will expand to show more information. Click on one of the Bowtie2 output datasets to expand it. You'll notice some text in a box with some information about the alignment results, similar to the following:</p>
+<pre><code>[samopen] SAM header is present: 15 sequences.
+200000 reads; of these:
+  200000 (100.00%) were unpaired; of these:
+    53 (0.03%) aligned 0 times
+    191672 (95.84%) aligned exactly 1 time
+    8275 (4.14%) aligned &gt;1 times
+99.97% overall alignment rate</code></pre>
+<p>It's a good idea to check this information before proceeding further to make sure it's reasonable. Since this is tutorial data, the overall alignment rate will be abnormally high — between 60% and 90% is more typical of real data. Also check the percentage of uniquely mapped reads (reads aligned exactly one time). A low percentage of uniquely mapped reads may indicate a problem, but for some proteins may be unavoidable (e.g. if the protein binds frequently to repetitive DNA). For the tutorial, if your overall alignment rate isn't over 99%, you may have aligned the reads to the wrong genome.</p>
+<p>Note that only a few lines of tool output can be shown in this text box. In this case, we only need to see a few lines, but other times you may need to inspect the full tool output. To do so, first click the info icon under the text box.</p>
+<div class="figure">
+<img src="images/06-info.png" />
+
+</div>
+<p>This will bring up the dataset information pane. Here you'll see lots of information about this dataset and the job that created it, including the creation timestamp, size, format, tool name, and tool version. The text we saw above comes from the messages the tool writes to what's called &quot;standard error&quot;, or <code>stderr</code>. Find the <code>stderr</code> link and click on it to display the entirety of these messages.</p>
+<div class="figure">
+<img src="images/06-stderr.png" />
+
+</div>
+<p>Some tools will write information to &quot;standard output&quot; (<code>stdout</code>) instead, or will write to both <code>stdout</code> and <code>stderr</code>. Other tools don't output any messages at all, or maybe only do so when there's an error. In any case, check here first if you're investigating a problem or looking for more information about a job.</p>
+<h2 id="predicting-fragment-size">5. Predicting fragment size</h2>
+<p>Before we can move on with the analysis, we need to know the average length of the DNA fragments from which the reads were sequenced. Typically, reads sequenced from these fragments do not span their entire length. The estimated fragment length is used to &quot;extend&quot; these reads to get a more accurate representation of the genomic regions covered by the sample. (If you know the average fragment length based on the wet lab procedure, you can skip this step and use that value instead.)</p>
+<p>This time we'll be using a tool outside the deepTools suite. deepTools does provide a tool for estimating fragment length, but it only works with paired-end reads. We'll use a tool from the MACS2 suite instead.</p>
+<p>In the tool pane, select <em>NGS: Peak Calling &gt; MACS2 predictd</em>. In the &quot;ChIP-seq alignment file&quot; list at the top, select one of the Bowtie2 aligned reads datasets, then hold down Control (Windows) or Command (Mac) and select the other one. Next, under &quot;Effective genome size&quot;, select <strong>Fly (121,400,000)</strong>. Leave the other settings at their defaults.</p>
+<div class="figure">
+<img src="images/07-predictd.png" />
+
+</div>
+<p>We'll need the predicted fragment size for the next step, so click <em>Execute</em> and wait for the job to finish. The predictd tool produces two output datasets. One, named &quot;d value&quot;, is a text file containing the predicted fragment length. The other, named &quot;X-correlation image&quot;, is a PDF containing plots of the model from which the fragment length is predicted. Click on the eye icon for the &quot;d value&quot; dataset to view it.</p>
+<div class="figure">
+<img src="images/07-view.png" />
+
+</div>
+<p>The predicted fragment length (as well as an alternate fragment length, in case the results are multimodal) is given at the bottom.</p>
+<h2 id="computing-sample-correlation">6. Computing sample correlation</h2>
+<p>Now we'll measure the degree of similarity between the input and Pol II samples. The <a href="https://github.com/fidelram/deepTools/wiki/QC#bamCorrelate">bamCorrelate</a> tool computes pairwise correlation coefficients between two or more BAM files based on read coverage over genomic regions. The samples are then clustered hierarchically and the ordered table of coefficients is presented as a heatmap.</p>
+<p>In the tool pane, select <em>NGS: deepTools &gt; bamCorrelate</em>. Use the following settings:</p>
+<ul>
+<li>1: BAM files &gt; Bam file: <strong>Input sample aligned reads</strong></li>
+<li>1: BAM files &gt; Label: <strong>Input</strong></li>
+<li>2: BAM files &gt; Bam file: <strong>Pol II sample aligned reads</strong></li>
+<li>2: BAM files &gt; Label: <strong>Pol II</strong></li>
+<li>Length of the average fragment size: <strong>178</strong></li>
+<li>Correlation method: <strong>Pearson</strong></li>
+</ul>
+<div class="figure">
+<img src="images/08-bamcorrelate.png" />
+
+</div>
+<p>After setting the above parameters, click <em>Execute</em> to submit the job.</p>
+<p>Using the Pearson correlation coefficient, values generally range from 0.3–0.4 for unrelated samples to &gt; 0.9 for high-quality replicates.</p>
+<h2 id="plotting-a-chip-seq-fingerprint">7. Plotting a ChIP-seq &quot;fingerprint&quot;</h2>
+<p>Next we'll assess the enrichment strength of the treated sample versus the control. The <a href="https://github.com/fidelram/deepTools/wiki/QC#bamFingerprint">bamFingerprint</a> tool generates a simple plot useful for determining whether or not the ChIP worked.</p>
+<p>In the tool pane, select <em>NGS: deepTools &gt; bamFingerprint</em>. Use the following settings:</p>
+<ul>
+<li>1: BAM files &gt; Bam file: <strong>Input sample aligned reads</strong></li>
+<li>1: BAM files &gt; Label: <strong>Input</strong></li>
+<li>2: BAM files &gt; Bam file: <strong>Pol II sample aligned reads</strong></li>
+<li>2: BAM files &gt; Label: <strong>Pol II</strong></li>
+<li>Length of the average fragment size: <strong>178</strong></li>
+</ul>
+<div class="figure">
+<img src="images/09-bamfingerprint.png" />
+
+</div>
+<p>Leave the other settings at their defaults and click <em>Execute</em>.</p>
+<p>In essence, the plot shows the relative concentration of reads from the two samples mapping to randomly-sampled regions of the genome. Reads that are uniformly distributed over the genome will generate a straight diagonal line. On the other hand, if many reads map to only a few, narrow regions, the line will show a sharp rise on the right.</p>
+<h2 id="generating-a-signal-track">8. Generating a signal track</h2>
+<p>Next we'll generate a signal track comparing the treated sample to the control using the <a href="https://github.com/fidelram/deepTools/wiki/Normalizations#bamCompare">bamCompare</a> tool. This tool partitions the genome into equal-sized bins, then computes the relative enrichment of the treatment versus the control for each bin. Note that there are other, and possibly more sophisticated, ways of generating signal tracks (e.g. peak calling and background comparison with MACS). So long as they're in bigWig or bedgraph format, signal tracks generated by other tools can be used in the deepTools analysis that we'll perform in the next few steps.</p>
+<p>In the tool pane, select <em>NGS: deepTools &gt; bamCompare</em>. Use the following settings:</p>
+<ul>
+<li>First BAM file (e.g. treated sample): <strong>Pol II sample aligned reads</strong></li>
+<li>Second BAM file (e.g. control sample): <strong>Input sample aligned reads</strong></li>
+<li>Length of the average fragment size: <strong>178</strong></li>
+</ul>
+<div class="figure">
+<img src="images/10-bamcompare-1.png" />
+
+</div>
+<p>Scroll down a bit and set &quot;Show advanced options&quot; to <strong>yes</strong>, then set &quot;Ignore duplicates&quot; to <strong>Yes</strong>.</p>
+<div class="figure">
+<img src="images/10-bamcompare-2.png" />
+
+</div>
+<p>Leave the other settings at their defaults and click <em>Execute</em>.</p>
+<h2 id="comparing-chr2l-and-chrx">9. Comparing chr2L and chrX</h2>
+<p>Now we'll compare the binding of Pol II to genes on chr2L and chrX. In the last step, we generated a Pol II vs. input signal track over the entire genome. We'll partition the genome into regions of interest, considering genes on chr2L and chrX separately, analyze the signal over these regions, and plot the results.</p>
+<h3 id="a.-crunching-the-numbers">9a. Crunching the numbers</h3>
+<p>In the tool pane, select <em>NGS: deepTools &gt; computeMatrix</em>. Click the <em>Insert regions to plot</em> button to add a second region, and use the following settings:</p>
+<ul>
+<li>1: regions to plot &gt; Regions to plot: <strong>chr2L genes</strong></li>
+<li>1: regions to plot &gt; Label: <strong>chr2L</strong></li>
+<li>2: regions to plot &gt; Regions to plot: <strong>chrX genes</strong></li>
+<li>2: regions to plot &gt; Label: <strong>chrX</strong></li>
+<li>Score file: <strong>bamCompare signal track</strong></li>
+</ul>
+<div class="figure">
+<img src="images/11-computematrix-1.png" />
+
+</div>
+<p>Next, scroll down to where it says &quot;computeMatrix has two main output options&quot; and make sure <strong>scale-regions</strong> is selected. Use the following settings:</p>
+<ul>
+<li>Distance in bp to which all regions are going to be fitted: <strong>3000</strong></li>
+<li>Set distance up- and downstream of the given regions: <strong>yes</strong></li>
+<li>Distance upstream: <strong>1000</strong></li>
+<li>Distance downstream: <strong>1000</strong></li>
+</ul>
+<div class="figure">
+<img src="images/11-computematrix-2.png" />
+
+</div>
+<p>Then click <em>Execute</em>.</p>
+<p>We'll be running computeMatrix again later using the concatenated genes dataset, so we'll rename this output before we continue. Wait for the job to finish, click the pencil icon, and name it something like <strong>computeMatrix (chr2L, chrX separate)</strong>.</p>
+<h3 id="b.-plotting-the-heat-map">9b. Plotting the heat map</h3>
+<p>In the tool pane, select <em>NGS: deepTools &gt; heatmapper</em>. Under &quot;Matrix file from the computeMatrix tool&quot;, select the <strong>computeMatrix (chr2L, chrX separate)</strong> dataset from the previous step. Leave the other settings at their defaults.</p>
+<div class="figure">
+<img src="images/12-heatmapper.png" />
+
+</div>
+<p>Finally, click <em>Execute</em>.</p>
+<p>In the previous step, we used the RefSeq genes on chr2L and chrX that we downloaded earlier to define the regions of interest. We also configured computeMatrix to include 1000 bp upstream and downstream of the gene bodies as part of those regions. The &quot;scale-regions&quot; mode of computeMatrix scales the regions to a common length, which we set to 3000 bp.</p>
+<p>The resulting plots include a signal profile over the regions and two heatmaps, one for chr2L and one for chrX. Each line in the heatmap represents a single gene and its flanking regions, scaled to the common length. The colors represent the strength of the signal. By default, the regions are sorted from top to bottom in decreasing order of the mean signal strength. Sort order and quantities other than the mean can be selected in the heatmapper tool's advanced options.</p>
+<p>Note that the heatmapper tool can save the data underlying the heatmap, too. We'll see how to do that in the next step.</p>
+<h2 id="comparing-clusters">10. Comparing clusters</h2>
+<p>Next we'll see if we can cluster genes based on Pol II's affinity for binding to them. The heatmapper tool can only perform clustering when one set of regions is supplied to computeMatrix, which is why we concatenated the chr2L and chrX BED files earlier.</p>
+<h3 id="a.-crunching-the-numbers-again">10a. Crunching the numbers again</h3>
+<p>In the tool pane, select <em>NGS: deepTools &gt; computeMatrix</em>. Use the following settings:</p>
+<ul>
+<li>1: regions to plot &gt; Regions to plot: <strong>concatenated chr2L and chrX genes</strong></li>
+<li>1: regions to plot &gt; Label: <strong>genes</strong></li>
+<li>Score file: <strong>bamCompare signal track</strong></li>
+</ul>
+<div class="figure">
+<img src="images/13-computematrix-1.png" />
+
+</div>
+<p>Next, scroll down to where it says &quot;computeMatrix has two main output options&quot; and make sure <strong>scale-regions</strong> is selected. Use the following settings:</p>
+<ul>
+<li>Distance in bp to which all regions are going to be fitted: <strong>3000</strong></li>
+<li>Set distance up- and downstream of the given regions: <strong>yes</strong></li>
+<li>Distance upstream: <strong>1000</strong></li>
+<li>Distance downstream: <strong>1000</strong></li>
+</ul>
+<div class="figure">
+<img src="images/13-computematrix-2.png" />
+
+</div>
+<p>Then click <em>Execute</em>.</p>
+<p>As before, we'll rename this computeMatrix output so we can distinguish it from the one produced earlier. Wait for the job to finish, click the pencil icon, and name it something like <strong>computeMatrix (chr2L, chrX combined)</strong>.</p>
+<h3 id="b.-plotting-the-heat-map-1">10b. Plotting the heat map</h3>
+<p>In the tool pane, select <em>NGS: deepTools &gt; heatmapper</em>. Use the following settings:</p>
+<ul>
+<li>Matrix file from the computeMatrix tool: <strong>computeMatrix (chr2L, chrX combined)</strong></li>
+<li>Show advanced output settings: <strong>yes</strong></li>
+<li>Save the regions after skipping zeros or min/max threshold values: <strong>Yes</strong></li>
+<li>Show advanced options: <strong>yes</strong></li>
+</ul>
+<div class="figure">
+<img src="images/14-heatmapper-1.png" />
+
+</div>
+<p>Next, scroll down to the bottom of the advanced options and use the following settings:</p>
+<ul>
+<li>Did you compute the matrix with more than one groups of regions?: <strong>No, I used only one region.</strong></li>
+<li>Clustering algorithm: <strong>Kmeans clustering</strong></li>
+<li>Number of clusters to compute: <strong>3</strong></li>
+</ul>
+<div class="figure">
+<img src="images/14-heatmapper-2.png" />
+
+</div>
+<p>Finally, click <em>Execute</em>.</p>
+<p>As before, the resulting plots include a signal profile and heatmaps. This time the regions are grouped into three clusters instead of being separated by chromosome.</p>
+<p>Additionally, because we configured the heatmapper tool to save the regions, the heatmapper tool will output a second dataset called &quot;sorted/filtered regions&quot;. This dataset is a BED file that can be used for analyzing results (e.g. in Excel or R), and contains the following columns:</p>
+<ol style="list-style-type: decimal">
+<li>chromosome name</li>
+<li>starting position</li>
+<li>ending position</li>
+<li>feature name (in this case, gene name)</li>
+<li>score (in this case, mean signal over the region)</li>
+<li>strand</li>
+<li>assigned cluster</li>
+</ol>
+</body>
+</html>
